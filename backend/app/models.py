@@ -9,6 +9,7 @@ class Customer(Base):
     name = Column(String)
     phone = Column(String)
     address = Column(String)
+    email=Column(String)
 
 
 class Measurement(Base):
@@ -28,11 +29,20 @@ class Measurement(Base):
     neck = Column(Float)
 
     notes = Column(String)
+
+
+
 class Order(Base):
     __tablename__ = "orders"
 
-    id = Column(Integer, primary_key=True)
-    customer_id = Column(Integer, ForeignKey("customers.id"))
-    dress_type = Column(String)
-    price = Column(String)
-    status = Column(String)
+    id = Column(Integer, primary_key=True, index=True)
+
+    customer_id = Column(Integer)
+
+    description = Column(String)
+
+    amount = Column(Float)
+
+    due_date = Column(String)
+
+    status = Column(String, default="Pending")

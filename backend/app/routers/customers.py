@@ -1,25 +1,55 @@
-from fastapi import APIRouter,Depends
+from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from ..database import SessionLocal
-from .. import models,schemas
+from ..database import get_db
+from .. import models, schemas
 
-router = APIRouter(prefix="/customers")
+router = APIRouter(prefix="/customers", tags=["Customers"])
 
-def get_db():
-    db=SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
-@router.post("/")
-def create_customer(customer:schemas.CustomerCreate,db:Session=Depends(get_db)):
-    new=models.Customer(**customer.dict())
-    db.add(new)
-    db.commit()
-    db.refresh(new)
-    return new
 
 @router.get("/")
-def get_customers(db:Session=Depends(get_db)):
+def get_customers(db: Session = Depends(get_db)):
     return db.query(models.Customer).all()
+
+
+@router.post("/")
+def create_customer(data: schemas.CustomerCreate, db: Session = Depends(get_db)):
+
+    customer = models.Customer(
+        name=data.name,
+        phone=data.phone,
+        email=data.email,
+        address=data.address
+    )
+
+    db.add(customer)
+    db.commit()
+    db.refresh(customer)
+
+    return customer
+
+
+@router.put("/{id}")
+def update_customer(id: int, data: schemas.CustomerCreate, db: Session = Depends(get_db)):
+
+    customer = db.query(models.Customer).filter(models.Customer.id == id).first()
+
+    customer.name = data.name
+    customer.phone = data.phone
+    customer.email = data.email
+    customer.address = data.address
+
+    db.commit()
+    db.refresh(customer)
+
+    return customer
+
+
+@router.delete("/{id}")
+def delete_customer(id: int, db: Session = Depends(get_db)):
+
+    customer = db.query(models.Customer).filter(models.Customer.id == id).first()
+
+    db.delete(customer)
+    db.commit()
+
+    return {"message": "Customer deleted"}

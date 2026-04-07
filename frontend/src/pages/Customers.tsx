@@ -1,69 +1,99 @@
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { getCustomers, addCustomer } from "@/lib/api"
+
+import {
+getCustomers,
+addCustomer,
+updateCustomer,
+deleteCustomer
+} from "@/lib/api"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 
-import { Search, Phone, Mail, MapPin, Plus } from "lucide-react"
+import { Plus } from "lucide-react"
 
-export default function Customers() {
+export default function Customers(){
 
 const queryClient = useQueryClient()
 
-const [search,setSearch] = useState("")
 const [open,setOpen] = useState(false)
+const [editId,setEditId] = useState<number|null>(null)
 
 const [form,setForm] = useState({
- name:"",
- phone:"",
- email:"",
- address:""
+name:"",
+phone:"",
+email:"",
+address:""
 })
 
-const {data:customers=[]} = useQuery({
- queryKey:["customers"],
- queryFn:getCustomers
+const {data:customers=[]}=useQuery({
+queryKey:["customers"],
+queryFn:getCustomers
 })
 
-const mutation = useMutation({
- mutationFn:addCustomer,
- onSuccess:()=>{
-   queryClient.invalidateQueries({queryKey:["customers"]})
-   setOpen(false)
- }
+
+const addMutation=useMutation({
+mutationFn:addCustomer,
+onSuccess:()=>{
+queryClient.invalidateQueries({queryKey:["customers"]})
+setOpen(false)
+resetForm()
+}
 })
 
-const submit=(e:any)=>{
- e.preventDefault()
 
- mutation.mutate(form)
+const updateMutation=useMutation({
+mutationFn:(data:any)=>updateCustomer(editId,data),
+onSuccess:()=>{
+queryClient.invalidateQueries({queryKey:["customers"]})
+setOpen(false)
+setEditId(null)
+resetForm()
+}
+})
 
- setForm({
-  name:"",
-  phone:"",
-  email:"",
-  address:""
- })
+
+const deleteMutation=useMutation({
+mutationFn:deleteCustomer,
+onSuccess:()=>{
+queryClient.invalidateQueries({queryKey:["customers"]})
+}
+})
+
+
+const resetForm=()=>{
+setForm({
+name:"",
+phone:"",
+email:"",
+address:""
+})
 }
 
-const filtered = customers.filter((c:any)=>
- c.name.toLowerCase().includes(search.toLowerCase())
-)
+
+const submit=(e:any)=>{
+e.preventDefault()
+
+if(editId){
+updateMutation.mutate(form)
+}else{
+addMutation.mutate(form)
+}
+
+}
+
 
 return(
 
 <div className="space-y-6">
 
-<div className="flex items-center justify-between">
+<div className="flex justify-between">
 
-<div>
-<h1 className="text-2xl font-semibold">Customers</h1>
-<p className="text-muted-foreground">
-Manage your customer directory
-</p>
-</div>
+<h1 className="text-2xl font-semibold">
+Customers
+</h1>
 
 <Button onClick={()=>setOpen(true)} className="gap-2">
 <Plus size={16}/>
@@ -73,48 +103,56 @@ Add Customer
 </div>
 
 
-{/* Search */}
+<div className="grid gap-4">
 
-<div className="relative max-w-sm">
+{customers.map((c:any)=>(
 
-<Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground"/>
+<Card key={c.id} className="p-4 flex justify-between items-center">
 
-<Input
-className="pl-9"
-placeholder="Search customers..."
-value={search}
-onChange={(e)=>setSearch(e.target.value)}
-/>
+<div>
+
+<h3 className="font-semibold">
+{c.name}
+</h3>
+
+<p className="text-sm text-muted-foreground">
+{c.phone}
+</p>
 
 </div>
 
 
-{/* Customer Cards */}
+<div className="flex gap-2">
 
-<div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+<Button
+variant="outline"
+onClick={()=>{
 
-{filtered.map((c:any)=>(
+setEditId(c.id)
 
-<Card key={c.id} className="p-5 space-y-3">
+setForm({
+name:c.name,
+phone:c.phone,
+email:c.email,
+address:c.address
+})
 
-<h3 className="font-semibold text-lg">
-{c.name}
-</h3>
+setOpen(true)
 
-<p className="flex items-center gap-2 text-sm text-muted-foreground">
-<Phone size={14}/>
-{c.phone}
-</p>
+}}
+>
+Edit
+</Button>
 
-<p className="flex items-center gap-2 text-sm text-muted-foreground">
-<Mail size={14}/>
-{c.email}
-</p>
 
-<p className="flex items-center gap-2 text-sm text-muted-foreground">
-<MapPin size={14}/>
-{c.address}
-</p>
+<Button
+variant="destructive"
+onClick={()=>deleteMutation.mutate(c.id)}
+>
+Delete
+</Button>
+
+</div>
 
 </Card>
 
@@ -123,22 +161,23 @@ onChange={(e)=>setSearch(e.target.value)}
 </div>
 
 
-{/* Add Customer Modal */}
+{open &&(
 
-{open && (
+<div className="fixed inset-0 bg-black/40 flex items-center justify-center">
 
-<div className="fixed inset-0 flex items-center justify-center bg-black/40">
+<div className="bg-white w-[400px] p-6 rounded-xl space-y-3">
 
-<div className="bg-white rounded-xl p-6 w-[400px] space-y-4">
+<h2 className="font-semibold">
 
-<h2 className="text-lg font-semibold">
-Add New Customer
+{editId ? "Edit Customer" : "Add Customer"}
+
 </h2>
+
 
 <form onSubmit={submit} className="space-y-3">
 
 <Input
-placeholder="Full Name"
+placeholder="Name"
 value={form.name}
 onChange={(e)=>setForm({...form,name:e.target.value})}
 />
@@ -161,8 +200,11 @@ value={form.address}
 onChange={(e)=>setForm({...form,address:e.target.value})}
 />
 
+
 <Button className="w-full">
-Add Customer
+
+{editId ? "Update Customer" : "Save Customer"}
+
 </Button>
 
 </form>

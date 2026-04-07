@@ -65,3 +65,49 @@ export const addMeasurement = async (data:any) => {
 
   return res.json()
 }
+export const updateCustomer = async(id:number,data:any)=>{
+  const res = await fetch(`${API}/customers/${id}`,{
+    method:"PUT",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify(data)
+  })
+  return res.json()
+}
+
+export const deleteCustomer = async(id:number)=>{
+  await fetch(`${API}/customers/${id}`,{
+    method:"DELETE"
+  })
+}
+
+
+export const updateOrder = async(id:number,data:any)=>{
+  const res = await fetch(`${API}/orders/${id}`,{
+    method:"PUT",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify(data)
+  })
+  return res.json()
+}
+
+export const deleteOrder = async(id:number)=>{
+  await fetch(`${API}/orders/${id}`,{
+    method:"DELETE"
+  })
+}
+
+
+export const updateMeasurement = async(id:number,data:any)=>{
+  const res = await fetch(`${API}/measurements/${id}`,{
+    method:"PUT",
+    headers:{ "Content-Type":"application/json" },
+    body:JSON.stringify(data)
+  })
+  return res.json()
+}
+
+export const deleteMeasurement = async(id:number)=>{
+  await fetch(`${API}/measurements/${id}`,{
+    method:"DELETE"
+  })
+}
