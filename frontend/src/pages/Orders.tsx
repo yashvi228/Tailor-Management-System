@@ -71,14 +71,13 @@ queryClient.invalidateQueries({queryKey:["orders"]})
 
 const submit=(e:any)=>{
 e.preventDefault()
-
 const data={
-customer_id:Number(form.customer_id),
-description:form.description,
-amount:Number(form.amount),
-due_date:form.due_date
-}
-
+  customer_id:Number(form.customer_id),
+  description:form.description,
+  amount:Number(form.amount),
+  due_date:form.due_date,
+  status:"Pending"
+  }
 if(editId){
 updateMutation.mutate(data)
 }else{
