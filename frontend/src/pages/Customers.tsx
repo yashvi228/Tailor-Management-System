@@ -1,11 +1,12 @@
+
 import { useState } from "react"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
 
 import {
-getCustomers,
-addCustomer,
-updateCustomer,
-deleteCustomer
+  getCustomers,
+  addCustomer,
+  updateCustomer,
+  deleteCustomer
 } from "@/lib/api"
 
 import { Button } from "@/components/ui/button"
@@ -19,69 +20,87 @@ export default function Customers(){
 const queryClient = useQueryClient()
 
 const [open,setOpen] = useState(false)
-const [editId,setEditId] = useState<number|null>(null)
+const [editId,setEditId] = useState<number | null>(null)
 
 const [form,setForm] = useState({
-name:"",
-phone:"",
-email:"",
-address:""
-})
-
-const {data:customers=[]}=useQuery({
-queryKey:["customers"],
-queryFn:getCustomers
+  name:"",
+  phone:"",
+  email:"",
+  address:""
 })
 
 
-const addMutation=useMutation({
-mutationFn:addCustomer,
-onSuccess:()=>{
-queryClient.invalidateQueries({queryKey:["customers"]})
-setOpen(false)
-resetForm()
-}
+// FETCH CUSTOMERS
+const {data:customers=[]} = useQuery({
+  queryKey:["customers"],
+  queryFn:getCustomers
 })
 
 
-const updateMutation=useMutation({
-mutationFn:(data:any)=>updateCustomer(editId,data),
-onSuccess:()=>{
-queryClient.invalidateQueries({queryKey:["customers"]})
-setOpen(false)
-setEditId(null)
-resetForm()
-}
+// ADD CUSTOMER
+const addMutation = useMutation({
+  mutationFn:addCustomer,
+  onSuccess:()=>{
+    queryClient.invalidateQueries({queryKey:["customers"]})
+    setOpen(false)
+    resetForm()
+  },
+  onError:(err)=>{
+    console.error("Add customer error:",err)
+    alert("Failed to save customer")
+  }
 })
 
 
-const deleteMutation=useMutation({
-mutationFn:deleteCustomer,
-onSuccess:()=>{
-queryClient.invalidateQueries({queryKey:["customers"]})
-}
+// UPDATE CUSTOMER
+const updateMutation = useMutation({
+  mutationFn:(data:any)=>{
+    if(editId===null) return
+    return updateCustomer(editId,data)
+  },
+  onSuccess:()=>{
+    queryClient.invalidateQueries({queryKey:["customers"]})
+    setOpen(false)
+    setEditId(null)
+    resetForm()
+  },
+  onError:(err)=>{
+    console.error("Update error:",err)
+  }
 })
 
 
+// DELETE CUSTOMER
+const deleteMutation = useMutation({
+  mutationFn:deleteCustomer,
+  onSuccess:()=>{
+    queryClient.invalidateQueries({queryKey:["customers"]})
+  }
+})
+
+
+// RESET FORM
 const resetForm=()=>{
-setForm({
-name:"",
-phone:"",
-email:"",
-address:""
-})
+  setForm({
+    name:"",
+    phone:"",
+    email:"",
+    address:""
+  })
 }
 
 
+// SUBMIT FORM
 const submit=(e:any)=>{
-e.preventDefault()
+  e.preventDefault()
 
-if(editId){
-updateMutation.mutate(form)
-}else{
-addMutation.mutate(form)
-}
+  console.log("Submitting:",form)
 
+  if(editId){
+    updateMutation.mutate(form)
+  }else{
+    addMutation.mutate(form)
+  }
 }
 
 
@@ -201,7 +220,7 @@ onChange={(e)=>setForm({...form,address:e.target.value})}
 />
 
 
-<Button className="w-full">
+<Button type="submit" className="w-full">
 
 {editId ? "Update Customer" : "Save Customer"}
 

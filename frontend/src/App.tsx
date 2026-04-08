@@ -8,11 +8,16 @@ import Orders from "./pages/Orders"
 import Auth from "./pages/Auth"
 
 import AppLayout from "./components/AppLayout"
+const token = localStorage.getItem("token")
+if (!token) {
+  // redirect to /auth
+}
 
 export default function App(){
 
   return(
 
+    
     <BrowserRouter>
 
       <Routes>

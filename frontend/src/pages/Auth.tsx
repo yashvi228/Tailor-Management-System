@@ -1,126 +1,129 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState } from "react"
+import { loginUser, signupUser } from "@/lib/api"
+
+import { Input } from "@/components/ui/input"
+import { Button } from "@/components/ui/button"
+
+import { Scissors } from "lucide-react"
 
 export default function Auth(){
 
-  const navigate = useNavigate()
+const [mode,setMode]=useState<"login" | "signup">("login")
 
-  const [isLogin,setIsLogin] = useState(true)
-  const [email,setEmail] = useState("")
-  const [password,setPassword] = useState("")
-  const [loading,setLoading] = useState(false)
+const [form,setForm]=useState({
+email:"",
+password:""
+})
 
-  const handleSubmit = async (e:any)=>{
-    e.preventDefault()
-    setLoading(true)
+const submit=async(e:any)=>{
+e.preventDefault()
 
-    try{
+try{
 
-      const url = isLogin
-        ? "http://localhost:8000/auth/login"
-        : "http://localhost:8000/auth/register"
+let res
 
-      const res = await fetch(url,{
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json"
-        },
-        body:JSON.stringify({
-          email,
-          password
-        })
-      })
+if(mode==="login"){
 
-      const data = await res.json()
+res=await loginUser({
+email:form.email,
+password:form.password
+})
 
-      if(!res.ok){
-        throw new Error(data.detail || "Error")
-      }
+localStorage.setItem("token",res.access_token)
 
-      if(isLogin){
-        localStorage.setItem("token",data.access_token)
-        navigate("/")
-      }else{
-        alert("Account created successfully")
-        setIsLogin(true)
-      }
+window.location.href="/"
 
-    }catch(err:any){
-      alert(err.message)
-    }
+}else{
 
-    setLoading(false)
-  }
+await signupUser({
+email:form.email,
+password:form.password
+})
 
-  return(
+alert("Account created successfully")
 
-    <div style={{
-      minHeight:"100vh",
-      display:"flex",
-      alignItems:"center",
-      justifyContent:"center"
-    }}>
+setMode("login")
 
-      <div style={{
-        width:"350px",
-        padding:"30px",
-        border:"1px solid #ddd",
-        borderRadius:"10px"
-      }}>
+}
 
-        <h2 style={{textAlign:"center"}}>
-          {isLogin ? "Login" : "Register"}
-        </h2>
+}catch(err){
 
-        <form onSubmit={handleSubmit}>
+alert("Error: Unable to connect server")
 
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e)=>setEmail(e.target.value)}
-            required
-            style={{width:"100%",marginBottom:"10px"}}
-          />
+console.log(err)
 
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e)=>setPassword(e.target.value)}
-            required
-            style={{width:"100%",marginBottom:"10px"}}
-          />
+}
 
-          <button
-            type="submit"
-            disabled={loading}
-            style={{width:"100%"}}
-          >
-            {loading ? "Please wait..." : isLogin ? "Login" : "Register"}
-          </button>
+}
 
-        </form>
+return(
 
-        <p style={{textAlign:"center",marginTop:"10px"}}>
+<div className="min-h-screen flex items-center justify-center bg-gradient-to-b from-green-50 to-white">
 
-          {isLogin
-            ? "Don't have an account?"
-            : "Already have an account?"}
+<div className="bg-white w-[420px] p-8 rounded-xl shadow">
 
-          <button
-            onClick={()=>setIsLogin(!isLogin)}
-            style={{marginLeft:"5px"}}
-          >
-            {isLogin ? "Register" : "Login"}
-          </button>
+<div className="flex flex-col items-center mb-6">
 
-        </p>
+<div className="bg-emerald-600 p-3 rounded-lg mb-3">
+<Scissors className="text-white"/>
+</div>
 
-      </div>
+<h1 className="text-xl font-semibold">
+Welcome back
+</h1>
 
-    </div>
+<p className="text-sm text-gray-500">
+Sign in to TailorPro Management System
+</p>
 
-  )
+</div>
+
+<form onSubmit={submit} className="space-y-4">
+
+<div>
+<label>Email</label>
+<Input
+placeholder="you@example.com"
+value={form.email}
+onChange={(e)=>setForm({...form,email:e.target.value})}
+/>
+</div>
+
+<div>
+<label>Password</label>
+<Input
+type="password"
+value={form.password}
+onChange={(e)=>setForm({...form,password:e.target.value})}
+/>
+</div>
+
+<Button className="w-full">
+{mode==="login" ? "Sign in" : "Sign up"}
+</Button>
+
+</form>
+
+<p className="text-sm text-center mt-4">
+
+{mode==="login" ? "Don't have an account? " : "Already have account? "}
+
+<button
+type="button"
+className="text-emerald-600 ml-1"
+onClick={()=>setMode(mode==="login"?"signup":"login")}
+>
+
+{mode==="login" ? "Sign up" : "Sign in"}
+
+</button>
+
+</p>
+
+</div>
+
+</div>
+
+)
 
 }

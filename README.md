@@ -24,7 +24,7 @@ cd frontend
 npm install
 npm run dev
 ```
-App at http://localhost:8080 (proxies /api to backend)
+App at c (proxies /api to backend)
 
 ## Next
 - Add auth (JWT)
