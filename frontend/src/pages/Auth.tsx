@@ -46,9 +46,9 @@ setMode("login")
 
 }
 
-}catch(err){
+}catch(err: any){
 
-alert("Error: Unable to connect server")
+alert(err.message || "Error: Unable to connect server")
 
 console.log(err)
 

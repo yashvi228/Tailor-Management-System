@@ -10,7 +10,10 @@ export const loginUser = async (data:any)=>{
     body:JSON.stringify(data)
   })
 
-  if(!res.ok) throw new Error("Login failed")
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Login failed");
+  }
   return res.json()
 }
 
@@ -24,7 +27,10 @@ export const signupUser = async (data:any)=>{
     body:JSON.stringify(data)
   })
 
-  if(!res.ok) throw new Error("Signup failed")
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({}));
+    throw new Error(errorData.detail || "Signup failed");
+  }
   return res.json()
 }
 
