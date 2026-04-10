@@ -6,6 +6,7 @@ import CustomerDetail from "./pages/CustomerDetail"
 import Measurements from "./pages/Measurements"
 import Orders from "./pages/Orders"
 import Auth from "./pages/Auth"
+import Invoices from "./pages/Invoices"
 
 import AppLayout from "./components/AppLayout"
 const token = localStorage.getItem("token")
@@ -13,11 +14,11 @@ if (!token) {
   // redirect to /auth
 }
 
-export default function App(){
+export default function App() {
 
-  return(
+  return (
 
-    
+
     <BrowserRouter>
 
       <Routes>
@@ -28,7 +29,7 @@ export default function App(){
           path="/"
           element={
             <AppLayout>
-              <Dashboard/>
+              <Dashboard />
             </AppLayout>
           }
         />
@@ -37,7 +38,7 @@ export default function App(){
           path="/customers"
           element={
             <AppLayout>
-              <Customers/>
+              <Customers />
             </AppLayout>
           }
         />
@@ -46,7 +47,7 @@ export default function App(){
           path="/customers/:id"
           element={
             <AppLayout>
-              <CustomerDetail/>
+              <CustomerDetail />
             </AppLayout>
           }
         />
@@ -55,7 +56,7 @@ export default function App(){
           path="/measurements"
           element={
             <AppLayout>
-              <Measurements/>
+              <Measurements />
             </AppLayout>
           }
         />
@@ -64,10 +65,11 @@ export default function App(){
           path="/orders"
           element={
             <AppLayout>
-              <Orders/>
+              <Orders />
             </AppLayout>
           }
         />
+        <Route path="/invoices" element={<AppLayout><Invoices /></AppLayout>} />
 
       </Routes>
 

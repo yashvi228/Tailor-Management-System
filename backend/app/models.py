@@ -55,3 +55,19 @@ class Order(Base):
     due_date = Column(String)
 
     status = Column(String, default="Pending")
+
+class Invoice(Base):
+
+    __tablename__ = "invoices"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    customer_id = Column(Integer, ForeignKey("customers.id"))
+
+    order_id = Column(Integer, ForeignKey("orders.id"))
+
+    amount = Column(Float)
+
+    status = Column(String, default="Pending")
+
+    created_at = Column(String)

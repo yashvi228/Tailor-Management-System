@@ -75,3 +75,18 @@ class UserLogin(BaseModel):
 
     email:str
     password:str
+
+class InvoiceCreate(BaseModel):
+
+    customer_id: int
+    order_id: int
+    amount: float
+    status: str
+
+
+class Invoice(InvoiceCreate):
+
+    id: int
+
+    class Config:
+        from_attributes = True
