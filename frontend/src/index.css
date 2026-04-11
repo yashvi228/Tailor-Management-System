@@ -4,46 +4,50 @@
 
 @layer base {
   :root {
+    --background: 210 20% 100%;
+    --foreground: 215 25% 15%;
 
-    /* Main background */
-    --background: 210 20% 98%;
-    --foreground: 222 47% 11%;
-  
-    /* Cards */
     --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
-  
-    /* Buttons Green */
-    --primary: 160 60% 40%;
+    --card-foreground: 215 25% 12%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 215 25% 12%;
+
+    --primary: 174 62% 38%;
     --primary-foreground: 0 0% 100%;
-  
-    /* Sidebar Dark */
-    --sidebar-background: 215 28% 12%;
-    --sidebar-foreground: 210 20% 90%;
-  
-    /* Sidebar hover */
-    --sidebar-accent: 215 28% 18%;
-    --sidebar-accent-foreground: 210 20% 95%;
-  
-    /* Sidebar border */
-    --sidebar-border: 215 20% 20%;
-  
-    /* Logo background green */
-    --sidebar-primary: 160 60% 45%;
+
+    --secondary: 210 18% 94%;
+    --secondary-foreground: 215 25% 12%;
+
+    --muted: 210 18% 94%;
+    --muted-foreground: 215 14% 46%;
+
+    --accent: 174 40% 92%;
+    --accent-foreground: 174 62% 28%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --success: 142 72% 40%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --border: 214 20% 90%;
+    --input: 214 20% 90%;
+    --ring: 174 62% 38%;
+
+    --radius: 0.625rem;
+
+    --sidebar-background: 215 25% 12%;
+    --sidebar-foreground: 210 18% 87%;
+    --sidebar-primary: 174 62% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-     /* Sidebar Dark Theme */
-  --sidebar-background: 220 25% 10%;   /* black/dark */
-  --sidebar-foreground: 0 0% 95%;
-
-  --sidebar-accent: 220 20% 16%;
-  --sidebar-accent-foreground: 0 0% 100%;
-
-  --sidebar-border: 220 20% 18%;
-
-  /* Primary Green */
-  --primary: 160 60% 40%;
-  --primary-foreground: 0 0% 100%;
-  
+    --sidebar-accent: 215 22% 18%;
+    --sidebar-accent-foreground: 210 18% 87%;
+    --sidebar-border: 215 20% 20%;
+    --sidebar-ring: 174 62% 48%;
   }
 
   .dark {

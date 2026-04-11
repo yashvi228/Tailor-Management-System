@@ -16,7 +16,7 @@ const fields = [
     { key: "waist", label: "Waist" },
     { key: "hips", label: "Hips" },
     { key: "shoulder", label: "Shoulder" },
-    { key: "sleeve_length", label: "Sleeve" },
+    { key: "sleeve", label: "Sleeve" },
     { key: "inseam", label: "Inseam" },
     { key: "neck", label: "Neck" },
 ] as const;
@@ -69,7 +69,7 @@ export default function Measurements() {
             waist: parseFloat(form.waist),
             hips: parseFloat(form.hips),
             shoulder: parseFloat(form.shoulder),
-            sleeve_length: parseFloat(form.sleeve_length),
+            sleeve: parseFloat(form.sleeve),
             inseam: parseFloat(form.inseam),
             neck: parseFloat(form.neck),
             notes: form.notes,
