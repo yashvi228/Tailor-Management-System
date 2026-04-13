@@ -1,6 +1,7 @@
-from sqlalchemy import Column,Integer,String,ForeignKey,Float
+from sqlalchemy import Column,Integer,String,ForeignKey,Float , DateTime
 from sqlalchemy.orm import relationship
 from .database import Base
+from datetime import datetime
 
 class User(Base):
 
@@ -70,4 +71,4 @@ class Invoice(Base):
 
     status = Column(String, default="Pending")
 
-    created_at = Column(String)
+    created_at = Column(DateTime, default=datetime.utcnow)

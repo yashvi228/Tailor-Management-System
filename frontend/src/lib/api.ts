@@ -262,3 +262,22 @@ export const addInvoice = async (data: any) => {
   }
   return res.json()
 }
+export const updateInvoice = async (id: number, data: any) => {
+
+  const res = await fetch(`${API}/invoices/${id}`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify(data)
+  })
+
+  if (!res.ok) {
+    const error = await res.text()
+    console.log("Update invoice error:", error)
+    throw new Error("Failed to update invoice")
+  }
+
+  return res.json()
+
+}

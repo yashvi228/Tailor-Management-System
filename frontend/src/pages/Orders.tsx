@@ -12,8 +12,17 @@ import {
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 
 import { Plus } from "lucide-react"
+
+const statusColors: Record<string, string> = {
+  Pending: "bg-yellow-100 text-yellow-800",
+  Cutting: "bg-blue-100 text-blue-800",
+  Stitching: "bg-purple-100 text-purple-800",
+  Ready: "bg-green-100 text-green-800",
+  Delivered: "bg-gray-200 text-gray-700"
+}
 
 export default function Orders() {
 
@@ -26,7 +35,8 @@ export default function Orders() {
     customer_id: "",
     description: "",
     amount: "",
-    due_date: ""
+    due_date: "",
+    status: "Pending"
   })
 
 
@@ -70,14 +80,17 @@ export default function Orders() {
 
 
   const submit = (e: any) => {
+
     e.preventDefault()
+
     const data = {
       customer_id: Number(form.customer_id),
       description: form.description,
       amount: Number(form.amount),
       due_date: form.due_date,
-      status: "Pending"
+      status: form.status
     }
+
     if (editId) {
       updateMutation.mutate(data)
     } else {
@@ -131,6 +144,10 @@ export default function Orders() {
                   ₹ {o.amount}
                 </p>
 
+                <Badge className={statusColors[o.status]}>
+                  {o.status}
+                </Badge>
+
               </div>
 
 
@@ -143,17 +160,20 @@ export default function Orders() {
                     setEditId(o.id)
 
                     setForm({
-                      customer_id: o.customer_id,
+                      customer_id: String(o.customer_id),
                       description: o.description,
-                      amount: o.amount,
-                      due_date: o.due_date
+                      amount: String(o.amount),
+                      due_date: o.due_date,
+                      status: o.status
                     })
 
                     setOpen(true)
 
                   }}
                 >
+
                   Edit
+
                 </Button>
 
 
@@ -161,7 +181,9 @@ export default function Orders() {
                   variant="destructive"
                   onClick={() => deleteMutation.mutate(o.id)}
                 >
+
                   Delete
+
                 </Button>
 
               </div>
@@ -226,6 +248,21 @@ export default function Orders() {
                 value={form.due_date}
                 onChange={(e) => setForm({ ...form, due_date: e.target.value })}
               />
+
+
+              <select
+                className="border p-2 rounded w-full"
+                value={form.status}
+                onChange={(e) => setForm({ ...form, status: e.target.value })}
+              >
+
+                <option value="Pending">Pending</option>
+                <option value="Cutting">Cutting</option>
+                <option value="Stitching">Stitching</option>
+                <option value="Ready">Ready</option>
+                <option value="Delivered">Delivered</option>
+
+              </select>
 
 
               <Button className="w-full">
