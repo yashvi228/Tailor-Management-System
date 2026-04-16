@@ -1,6 +1,6 @@
 from pydantic import BaseModel
 from typing import Optional
-
+from datetime import date
 
 # ----------------------------
 # CUSTOMER SCHEMA
@@ -23,20 +23,20 @@ class Customer(CustomerCreate):
 # ----------------------------
 # MEASUREMENTS SCHEMA
 # ----------------------------
-
 class MeasurementCreate(BaseModel):
 
-    customer_id: int
+    customer_id:int
+    garment_type:str
 
-    chest: float
-    waist: float
-    hips: float
-    shoulder: float
-    sleeve: float
-    inseam: float
-    neck: float
+    chest:float
+    waist:float
+    hips:float
+    shoulder:float
+    sleeve:float
+    inseam:float
+    neck:float
 
-    notes: Optional[str] = None
+    notes:str|None=None
 
 
 class Measurement(MeasurementCreate):
@@ -52,18 +52,18 @@ class Measurement(MeasurementCreate):
 
 class OrderCreate(BaseModel):
 
-    customer_id: int
-    description: str
-    amount: float
-    due_date: str
-    status : str
-
+    customer_id:int
+    description:str
+    amount:float
+    status:str = "Pending"
+    due_date: date
 
 class Order(OrderCreate):
     id: int
 
     class Config:
         from_attributes = True
+
 
 class UserCreate(BaseModel):
 

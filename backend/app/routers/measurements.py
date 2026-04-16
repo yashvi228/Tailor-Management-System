@@ -63,3 +63,12 @@ def delete_measurement(id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "Measurement deleted"}
+
+@router.get("/customer/{id}")
+def get_customer_measurements(id:int,db:Session=Depends(get_db)):
+
+    measurements = db.query(models.Measurement).filter(
+        models.Measurement.customer_id==id
+    ).all()
+
+    return measurements

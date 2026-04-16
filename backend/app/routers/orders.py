@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
 from ..database import get_db
 from .. import models, schemas
+from datetime import date
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
@@ -54,3 +55,17 @@ def delete_order(id: int, db: Session = Depends(get_db)):
     db.commit()
 
     return {"message": "Order deleted"}
+
+
+from datetime import date
+
+@router.get("/reminders")
+def get_reminders(db: Session = Depends(get_db)):
+
+    today = date.today()
+
+    orders = db.query(models.Order).filter(
+        models.Order.due_date == today
+    ).all()
+
+    return orders

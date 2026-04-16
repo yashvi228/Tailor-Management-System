@@ -281,3 +281,10 @@ export const updateInvoice = async (id: number, data: any) => {
   return res.json()
 
 }
+export const getOrderReminders = async () => {
+
+  const res = await fetch(`${API}/orders/reminders`)
+
+  return res.json()
+
+}
