@@ -5,13 +5,11 @@ import {
   getCustomers,
   getMeasurements,
   getOrders,
-  getInvoices,
-  addMeasurement
+  getInvoices
 } from "@/lib/api"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 
 export default function CustomerDetail() {
 
@@ -22,19 +20,6 @@ export default function CustomerDetail() {
   const [measurements, setMeasurements] = useState<any[]>([])
   const [orders, setOrders] = useState<any[]>([])
   const [invoices, setInvoices] = useState<any[]>([])
-
-  const [form, setForm] = useState({
-    garment_type: "",
-    chest: "",
-    waist: "",
-    hips: "",
-    shoulder: "",
-    sleeve: "",
-    inseam: "",
-    neck: "",
-    notes: ""
-  })
-
 
   useEffect(() => {
 
@@ -68,35 +53,6 @@ export default function CustomerDetail() {
   }, [id])
 
 
-  const saveMeasurement = async () => {
-
-    if (!form.garment_type) {
-      alert("Garment type required")
-      return
-    }
-
-    const newMeasurement = await addMeasurement({
-      customer_id: Number(id),
-      ...form
-    })
-
-    setMeasurements([...measurements, newMeasurement])
-
-    setForm({
-      garment_type: "",
-      chest: "",
-      waist: "",
-      hips: "",
-      shoulder: "",
-      sleeve: "",
-      inseam: "",
-      neck: "",
-      notes: ""
-    })
-
-  }
-
-
   if (!customer) return <p className="p-6">Loading...</p>
 
 
@@ -112,32 +68,25 @@ export default function CustomerDetail() {
       </Button>
 
 
-
       {/* Customer Profile */}
 
       <Card>
-
         <CardHeader>
           <CardTitle>Customer Profile</CardTitle>
         </CardHeader>
 
         <CardContent className="space-y-2">
-
           <p><b>Name:</b> {customer.name}</p>
           <p><b>Phone:</b> {customer.phone}</p>
           <p><b>Email:</b> {customer.email || "-"}</p>
           <p><b>Address:</b> {customer.address || "-"}</p>
-
         </CardContent>
-
       </Card>
 
 
-
-      {/* Measurements */}
+      {/* Measurements ONLY VIEW */}
 
       <Card>
-
         <CardHeader>
           <CardTitle>Measurements</CardTitle>
         </CardHeader>
@@ -159,81 +108,19 @@ export default function CustomerDetail() {
               <p>Waist: {m.waist}</p>
               <p>Shoulder: {m.shoulder}</p>
               <p>Sleeve: {m.sleeve}</p>
+              <p>Neck: {m.neck}</p>
 
             </div>
 
           ))}
 
-
-
-          {/* Add Measurement Form */}
-
-          <div className="grid grid-cols-2 gap-2">
-
-            <Input
-              placeholder="Garment Type"
-              value={form.garment_type}
-              onChange={(e) =>
-                setForm({ ...form, garment_type: e.target.value })
-              }
-            />
-
-            <Input
-              placeholder="Chest"
-              value={form.chest}
-              onChange={(e) =>
-                setForm({ ...form, chest: e.target.value })
-              }
-            />
-
-            <Input
-              placeholder="Waist"
-              value={form.waist}
-              onChange={(e) =>
-                setForm({ ...form, waist: e.target.value })
-              }
-            />
-
-            <Input
-              placeholder="Shoulder"
-              value={form.shoulder}
-              onChange={(e) =>
-                setForm({ ...form, shoulder: e.target.value })
-              }
-            />
-
-            <Input
-              placeholder="Sleeve"
-              value={form.sleeve}
-              onChange={(e) =>
-                setForm({ ...form, sleeve: e.target.value })
-              }
-            />
-
-            <Input
-              placeholder="Neck"
-              value={form.neck}
-              onChange={(e) =>
-                setForm({ ...form, neck: e.target.value })
-              }
-            />
-
-          </div>
-
-          <Button onClick={saveMeasurement}>
-            Add Measurement
-          </Button>
-
         </CardContent>
-
       </Card>
-
 
 
       {/* Orders */}
 
       <Card>
-
         <CardHeader>
           <CardTitle>Orders</CardTitle>
         </CardHeader>
@@ -259,15 +146,12 @@ export default function CustomerDetail() {
           ))}
 
         </CardContent>
-
       </Card>
-
 
 
       {/* Invoices */}
 
       <Card>
-
         <CardHeader>
           <CardTitle>Invoices</CardTitle>
         </CardHeader>
@@ -293,11 +177,8 @@ export default function CustomerDetail() {
           ))}
 
         </CardContent>
-
       </Card>
 
     </div>
-
   )
-
 }

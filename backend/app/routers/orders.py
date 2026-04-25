@@ -39,6 +39,7 @@ def update_order(id: int, data: schemas.OrderCreate, db: Session = Depends(get_d
     order.description = data.description
     order.due_date = data.due_date
     order.amount = data.amount
+    order.status= data.status
 
     db.commit()
     db.refresh(order)
