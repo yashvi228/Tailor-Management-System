@@ -185,22 +185,15 @@ export const getMeasurements = async () => {
 
   return res.json()
 }
+export const addMeasurement = async (data: FormData) => {
 
-
-export const addMeasurement = async (data: any) => {
-
-  const res = await fetch(`${API}/measurements/`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify(data)
+  const res = await fetch("http://127.0.0.1:8000/api/measurements/", {
+      method: "POST",
+      body: data
   })
 
   if (!res.ok) {
-    const error = await res.text()
-    console.log("Add measurement error:", error)
-    throw new Error("Failed to add measurement")
+      throw new Error("Failed to add measurement")
   }
 
   return res.json()

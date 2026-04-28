@@ -34,6 +34,7 @@ export default function Measurements() {
 
     const [search, setSearch] = useState("")
     const [open, setOpen] = useState(false)
+    const [file, setFile] = useState<File | null>(null)
 
     const [form, setForm] = useState({
         customer_id: "",
@@ -66,7 +67,7 @@ export default function Measurements() {
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["measurements"] })
             setOpen(false)
-
+            setFile(null)
             setForm({
                 customer_id: "",
                 garment_type: "",
@@ -81,27 +82,28 @@ export default function Measurements() {
             })
         }
     })
-
-
     const submit = (e: any) => {
-
         e.preventDefault()
-
-        mutation.mutate({
-
-            customer_id: Number(form.customer_id),
-            garment_type: form.garment_type,
-            chest: Number(form.chest),
-            waist: Number(form.waist),
-            hips: Number(form.hips),
-            shoulder: Number(form.shoulder),
-            sleeve: Number(form.sleeve),
-            inseam: Number(form.inseam),
-            neck: Number(form.neck),
-            notes: form.notes
-
-        })
-
+    
+        const formData = new FormData()
+    
+        formData.append("customer_id", form.customer_id)
+        formData.append("garment_type", form.garment_type)
+    
+        if (form.chest) formData.append("chest", form.chest)
+        if (form.waist) formData.append("waist", form.waist)
+        if (form.hips) formData.append("hips", form.hips)
+        if (form.shoulder) formData.append("shoulder", form.shoulder)
+        if (form.sleeve) formData.append("sleeve", form.sleeve)
+        if (form.inseam) formData.append("inseam", form.inseam)
+        if (form.neck) formData.append("neck", form.neck)
+        if (form.notes) formData.append("notes", form.notes)
+    
+        if (file) {
+            formData.append("file", file)
+        }
+    
+        mutation.mutate(formData)
     }
 
 
@@ -231,52 +233,73 @@ export default function Measurements() {
 
                                 <Input
                                     placeholder="Chest"
+                                    value={form.chest}
                                     onChange={(e) => setForm({ ...form, chest: e.target.value })}
                                 />
 
                                 <Input
                                     placeholder="Waist"
+                                    value={form.waist}
                                     onChange={(e) => setForm({ ...form, waist: e.target.value })}
                                 />
 
                                 <Input
                                     placeholder="Hips"
+                                    value={form.hips}
                                     onChange={(e) => setForm({ ...form, hips: e.target.value })}
                                 />
 
                                 <Input
                                     placeholder="Shoulder"
+                                    value={form.shoulder}
                                     onChange={(e) => setForm({ ...form, shoulder: e.target.value })}
                                 />
 
                                 <Input
                                     placeholder="Sleeve"
+                                    value={form.sleeve}
                                     onChange={(e) => setForm({ ...form, sleeve: e.target.value })}
                                 />
 
                                 <Input
                                     placeholder="Inseam"
+                                    value={form.inseam}
                                     onChange={(e) => setForm({ ...form, inseam: e.target.value })}
                                 />
 
                                 <Input
                                     placeholder="Neck"
+                                    value={form.neck}
                                     onChange={(e) => setForm({ ...form, neck: e.target.value })}
                                 />
 
                             </div>
 
 
+                            <div className="space-y-2">
+    <Label>Upload Image</Label>
+
+    <Input
+        type="file"
+        accept="image/*"
+        onChange={(e) => {
+            if (e.target.files && e.target.files[0]) {
+                setFile(e.target.files[0])
+            }
+        }}
+    />
+</div>
 
                             {/* Notes */}
 
                             <Input
                                 placeholder="Notes"
+                                value={form.notes}
                                 onChange={(e) => setForm({ ...form, notes: e.target.value })}
                             />
 
 
-                            <Button className="w-full">
+                            <Button type="submit" className="w-full">
 
                                 Save Measurements
 
@@ -307,10 +330,7 @@ export default function Measurements() {
 
             </div>
 
-
-
             {/* List */}
-
             <div className="grid gap-4 sm:grid-cols-2">
 
                 {filtered.map((m: any) => {

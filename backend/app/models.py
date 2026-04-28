@@ -41,7 +41,7 @@ class Measurement(Base):
     sleeve = Column(Float)
     inseam = Column(Float)
     neck = Column(Float)
-
+    image = Column(String)  
     notes = Column(String)
 
     created_at = Column(DateTime, default=datetime.utcnow)
