@@ -10,7 +10,7 @@ UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 
-# GET all
+
 @router.get("/")
 def get_measurements(db: Session = Depends(database.get_db)):
     return db.query(models.Measurement).all()
@@ -61,3 +61,51 @@ def create_measurement(
     db.refresh(new_measurement)
 
     return new_measurement
+
+
+@router.put("/{id}")
+def update_measurement(
+    id: int,
+    customer_id: int = Form(...),
+    garment_type: str = Form(...),
+    chest: float = Form(None),
+    waist: float = Form(None),
+    hips: float = Form(None),
+    shoulder: float = Form(None),
+    sleeve: float = Form(None),
+    inseam: float = Form(None),
+    neck: float = Form(None),
+    notes: str = Form(None),
+    file: UploadFile = File(None),
+    db: Session = Depends(database.get_db),
+):
+
+    measurement = db.query(models.Measurement).filter(models.Measurement.id == id).first()
+
+    if not measurement:
+        raise HTTPException(status_code=404, detail="Measurement not found")
+
+    # update fields
+    measurement.customer_id = customer_id
+    measurement.garment_type = garment_type
+    measurement.chest = chest
+    measurement.waist = waist
+    measurement.hips = hips
+    measurement.shoulder = shoulder
+    measurement.sleeve = sleeve
+    measurement.inseam = inseam
+    measurement.neck = neck
+    measurement.notes = notes
+
+    # update image if provided
+    if file:
+        file_location = f"uploads/{file.filename}"
+        with open(file_location, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+
+        measurement.image = file_location
+
+    db.commit()
+    db.refresh(measurement)
+
+    return measurement

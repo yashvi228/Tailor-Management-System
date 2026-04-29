@@ -199,13 +199,10 @@ export const addMeasurement = async (data: FormData) => {
   return res.json()
 }
 
-
-export const updateMeasurement = async (id: number, data: any) => {
-
+export const updateMeasurement = async (id: number, data: FormData) => {
   const res = await fetch(`${API}/measurements/${id}`, {
     method: "PUT",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(data)
+    body: data  
   })
 
   if (!res.ok) {
@@ -216,7 +213,6 @@ export const updateMeasurement = async (id: number, data: any) => {
 
   return res.json()
 }
-
 
 export const deleteMeasurement = async (id: number) => {
 
