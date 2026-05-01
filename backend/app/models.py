@@ -25,27 +25,35 @@ class Customer(Base):
 
 
 class Measurement(Base):
-
     __tablename__ = "measurements"
-
-    id = Column(Integer, primary_key=True)
-
-    customer_id = Column(Integer, ForeignKey("customers.id"))
-
-    garment_type = Column(String)
-
-    chest = Column(Float)
-    waist = Column(Float)
-    hips = Column(Float)
-    shoulder = Column(Float)
-    sleeve = Column(Float)
-    inseam = Column(Float)
-    neck = Column(Float)
-    image = Column(String)  
-    notes = Column(String)
-
-    created_at = Column(DateTime, default=datetime.utcnow)
-
+    id            = Column(Integer, primary_key=True)
+    customer_id   = Column(Integer, ForeignKey("customers.id"))
+    garment_type  = Column(String)
+    chest         = Column(Float)
+    waist         = Column(Float)
+    hips          = Column(Float)
+    shoulder      = Column(Float)
+    sleeve        = Column(Float)
+    inseam        = Column(Float)
+    neck          = Column(Float)
+    bust          = Column(Float)
+    hip           = Column(Float)
+    armhole       = Column(Float)
+    sleeve_length = Column(Float)
+    sleeve_round  = Column(Float)
+    length        = Column(Float)
+    neck_depth    = Column(Float)
+    neck_width    = Column(Float)
+    collar        = Column(Float)
+    thigh         = Column(Float)
+    knee          = Column(Float)
+    ankle         = Column(Float)
+    bottom_width  = Column(Float)
+    rise          = Column(Float)
+    flare         = Column(Float)
+    image         = Column(String)
+    notes         = Column(String)
+    created_at    = Column(DateTime, default=datetime.utcnow)
 
 class Order(Base):
 

@@ -1,111 +1,121 @@
-from fastapi import APIRouter, Depends, UploadFile, File, Form
+from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
 from sqlalchemy.orm import Session
 from .. import models, database
-import shutil
-import os
+import shutil, os
 
 router = APIRouter(prefix="/measurements", tags=["Measurements"])
-
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
-
-
 
 @router.get("/")
 def get_measurements(db: Session = Depends(database.get_db)):
     return db.query(models.Measurement).all()
 
-
-# CREATE with image upload
 @router.post("/")
 def create_measurement(
-    customer_id: int = Form(...),
-    garment_type: str = Form(...),
-    chest: float = Form(None),
-    waist: float = Form(None),
-    hips: float = Form(None),
-    shoulder: float = Form(None),
-    sleeve: float = Form(None),
-    inseam: float = Form(None),
-    neck: float = Form(None),
-    notes: str = Form(None),
+    customer_id:   int   = Form(...),
+    garment_type:  str   = Form(...),
+    chest:         float = Form(None),
+    waist:         float = Form(None),
+    hips:          float = Form(None),
+    shoulder:      float = Form(None),
+    sleeve:        float = Form(None),
+    inseam:        float = Form(None),
+    neck:          float = Form(None),
+    bust:          float = Form(None),
+    hip:           float = Form(None),
+    armhole:       float = Form(None),
+    sleeve_length: float = Form(None),
+    sleeve_round:  float = Form(None),
+    length:        float = Form(None),
+    neck_depth:    float = Form(None),
+    neck_width:    float = Form(None),
+    collar:        float = Form(None),
+    thigh:         float = Form(None),
+    knee:          float = Form(None),
+    ankle:         float = Form(None),
+    bottom_width:  float = Form(None),
+    rise:          float = Form(None),
+    flare:         float = Form(None),
+    notes:         str   = Form(None),
     file: UploadFile = File(None),
     db: Session = Depends(database.get_db),
 ):
-
     image_path = None
-
-    # save image
     if file:
         file_location = f"{UPLOAD_DIR}/{file.filename}"
         with open(file_location, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
         image_path = file_location
 
-    new_measurement = models.Measurement(
-        customer_id=customer_id,
-        garment_type=garment_type,
-        chest=chest,
-        waist=waist,
-        hips=hips,
-        shoulder=shoulder,
-        sleeve=sleeve,
-        inseam=inseam,
-        neck=neck,
-        notes=notes,
-        image=image_path,
+    m = models.Measurement(
+        customer_id=customer_id, garment_type=garment_type,
+        chest=chest, waist=waist, hips=hips, shoulder=shoulder,
+        sleeve=sleeve, inseam=inseam, neck=neck,
+        bust=bust, hip=hip, armhole=armhole,
+        sleeve_length=sleeve_length, sleeve_round=sleeve_round,
+        length=length, neck_depth=neck_depth, neck_width=neck_width,
+        collar=collar, thigh=thigh, knee=knee, ankle=ankle,
+        bottom_width=bottom_width, rise=rise, flare=flare,
+        notes=notes, image=image_path,
     )
-
-    db.add(new_measurement)
+    db.add(m)
     db.commit()
-    db.refresh(new_measurement)
-
-    return new_measurement
-
+    db.refresh(m)
+    return m
 
 @router.put("/{id}")
 def update_measurement(
-    id: int,
-    customer_id: int = Form(...),
-    garment_type: str = Form(...),
-    chest: float = Form(None),
-    waist: float = Form(None),
-    hips: float = Form(None),
-    shoulder: float = Form(None),
-    sleeve: float = Form(None),
-    inseam: float = Form(None),
-    neck: float = Form(None),
-    notes: str = Form(None),
+    id:            int,
+    customer_id:   int   = Form(...),
+    garment_type:  str   = Form(...),
+    chest:         float = Form(None),
+    waist:         float = Form(None),
+    hips:          float = Form(None),
+    shoulder:      float = Form(None),
+    sleeve:        float = Form(None),
+    inseam:        float = Form(None),
+    neck:          float = Form(None),
+    bust:          float = Form(None),
+    hip:           float = Form(None),
+    armhole:       float = Form(None),
+    sleeve_length: float = Form(None),
+    sleeve_round:  float = Form(None),
+    length:        float = Form(None),
+    neck_depth:    float = Form(None),
+    neck_width:    float = Form(None),
+    collar:        float = Form(None),
+    thigh:         float = Form(None),
+    knee:          float = Form(None),
+    ankle:         float = Form(None),
+    bottom_width:  float = Form(None),
+    rise:          float = Form(None),
+    flare:         float = Form(None),
+    notes:         str   = Form(None),
     file: UploadFile = File(None),
     db: Session = Depends(database.get_db),
 ):
-
-    measurement = db.query(models.Measurement).filter(models.Measurement.id == id).first()
-
-    if not measurement:
+    m = db.query(models.Measurement).filter(models.Measurement.id == id).first()
+    if not m:
         raise HTTPException(status_code=404, detail="Measurement not found")
 
-    # update fields
-    measurement.customer_id = customer_id
-    measurement.garment_type = garment_type
-    measurement.chest = chest
-    measurement.waist = waist
-    measurement.hips = hips
-    measurement.shoulder = shoulder
-    measurement.sleeve = sleeve
-    measurement.inseam = inseam
-    measurement.neck = neck
-    measurement.notes = notes
+    m.customer_id = customer_id
+    m.garment_type = garment_type
+    m.chest = chest;   m.waist = waist;  m.hips = hips
+    m.shoulder = shoulder; m.sleeve = sleeve; m.inseam = inseam; m.neck = neck
+    m.bust = bust;     m.hip = hip;      m.armhole = armhole
+    m.sleeve_length = sleeve_length;     m.sleeve_round = sleeve_round
+    m.length = length; m.neck_depth = neck_depth; m.neck_width = neck_width
+    m.collar = collar; m.thigh = thigh;  m.knee = knee
+    m.ankle = ankle;   m.bottom_width = bottom_width
+    m.rise = rise;     m.flare = flare;  m.notes = notes
 
-    # update image if provided
     if file:
         file_location = f"uploads/{file.filename}"
         with open(file_location, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
-
-        measurement.image = file_location
+        m.image = file_location
 
     db.commit()
-    db.refresh(measurement)
-
-    return measurement
+    db.refresh(m)
+    return m

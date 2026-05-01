@@ -35,20 +35,138 @@ import {
 } from "@/components/ui/alert-dialog"
 import { Label } from "@/components/ui/label"
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query"
-import { getMeasurements, addMeasurement, updateMeasurement, deleteMeasurement, getCustomers } from "@/lib/api"
+import {
+  getMeasurements,
+  addMeasurement,
+  updateMeasurement,
+  deleteMeasurement,
+  getCustomers,
+} from "@/lib/api"
 
-const emptyForm = {
-  customer_id: "",
-  garment_type: "",
-  chest: "",
-  waist: "",
-  hips: "",
-  shoulder: "",
-  sleeve: "",
-  inseam: "",
-  neck: "",
-  notes: "",
+// ── Garment templates ────────────────────────────────────────────────────────
+
+interface GarmentField {
+  key: string
+  label: string
 }
+
+interface GarmentTemplate {
+  label: string
+  emoji: string
+  fields: GarmentField[]
+}
+
+const GARMENT_TEMPLATES: Record<string, GarmentTemplate> = {
+  Kurta: {
+    label: "Kurta (Straight Kurti)",
+    emoji: "👗",
+    fields: [
+      { key: "bust",          label: "Bust / Chest" },
+      { key: "waist",         label: "Waist" },
+      { key: "hip",           label: "Hip" },
+      { key: "shoulder",      label: "Shoulder Width" },
+      { key: "armhole",       label: "Armhole" },
+      { key: "sleeve_length", label: "Sleeve Length" },
+      { key: "sleeve_round",  label: "Sleeve Round" },
+      { key: "length",        label: "Kurta Length" },
+      { key: "neck_depth",    label: "Neck Depth (Front & Back)" },
+      { key: "neck_width",    label: "Neck Width" },
+    ],
+  },
+  Pants: {
+    label: "Pants (Straight / Trouser)",
+    emoji: "👖",
+    fields: [
+      { key: "waist",        label: "Waist" },
+      { key: "hip",          label: "Hip" },
+      { key: "thigh",        label: "Thigh Round" },
+      { key: "knee",         label: "Knee Round" },
+      { key: "ankle",        label: "Bottom / Ankle Round" },
+      { key: "length",       label: "Length (Waist to Ankle)" },
+      { key: "rise",         label: "Rise (Crotch Depth)" },
+    ],
+  },
+  Plazo: {
+    label: "Plazo (Palazzo Pants)",
+    emoji: "👗",
+    fields: [
+      { key: "waist",        label: "Waist" },
+      { key: "hip",          label: "Hip" },
+      { key: "length",       label: "Length" },
+      { key: "bottom_width", label: "Bottom Width" },
+      { key: "rise",         label: "Rise" },
+    ],
+  },
+  Gown: {
+    label: "Gown",
+    emoji: "👗",
+    fields: [
+      { key: "bust",          label: "Bust" },
+      { key: "waist",         label: "Waist" },
+      { key: "hip",           label: "Hip" },
+      { key: "shoulder",      label: "Shoulder" },
+      { key: "armhole",       label: "Armhole" },
+      { key: "sleeve_length", label: "Sleeve Length" },
+      { key: "length",        label: "Length (Shoulder to Floor)" },
+      { key: "neck_depth",    label: "Neck Depth & Width" },
+    ],
+  },
+  Shirt: {
+    label: "Shirt (Men / Women)",
+    emoji: "👔",
+    fields: [
+      { key: "chest",         label: "Chest" },
+      { key: "waist",         label: "Waist" },
+      { key: "hip",           label: "Hip (for long shirts)" },
+      { key: "shoulder",      label: "Shoulder" },
+      { key: "sleeve_length", label: "Sleeve Length" },
+      { key: "sleeve_round",  label: "Sleeve Round" },
+      { key: "collar",        label: "Neck / Collar Size" },
+      { key: "length",        label: "Shirt Length" },
+    ],
+  },
+  Leggings: {
+    label: "Leggings",
+    emoji: "👖",
+    fields: [
+      { key: "waist",  label: "Waist" },
+      { key: "hip",    label: "Hip" },
+      { key: "thigh",  label: "Thigh" },
+      { key: "length", label: "Length" },
+      { key: "ankle",  label: "Ankle" },
+    ],
+  },
+  Anarkali: {
+    label: "Anarkali Kurti",
+    emoji: "👗",
+    fields: [
+      { key: "bust",          label: "Bust" },
+      { key: "waist",         label: "Waist" },
+      { key: "shoulder",      label: "Shoulder" },
+      { key: "armhole",       label: "Armhole" },
+      { key: "sleeve_length", label: "Sleeve Length" },
+      { key: "length",        label: "Length (below knee / floor)" },
+      { key: "neck_depth",    label: "Neck Depth & Width" },
+      { key: "flare",         label: "Flare (Umbrella fabric)" },
+    ],
+  },
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+
+type FormValues = Record<string, string>
+const emptyBase: FormValues = { customer_id: "", garment_type: "", notes: "" }
+
+function buildFormData(form: FormValues, file: File | null): FormData {
+  const fd = new FormData()
+  Object.entries(form).forEach(([k, v]) => {
+    if (v) fd.append(k, v)
+  })
+  if (file) fd.append("file", file)
+  return fd
+}
+
+// ── Measurement form ─────────────────────────────────────────────────────────
 
 function MeasurementForm({
   form,
@@ -59,9 +177,26 @@ function MeasurementForm({
   isPending,
   submitLabel,
   customers,
-}: any) {
+}: {
+  form: FormValues
+  setForm: (f: FormValues) => void
+  file: File | null
+  setFile: (f: File | null) => void
+  onSubmit: (e: React.FormEvent) => void
+  isPending: boolean
+  submitLabel: string
+  customers: any[]
+}) {
+  const template = form.garment_type ? GARMENT_TEMPLATES[form.garment_type] : null
+
+  const handleGarmentChange = (value: string) => {
+    // Keep customer + notes, reset all measurement fields
+    setForm({ customer_id: form.customer_id, garment_type: value, notes: form.notes })
+  }
+
   return (
-    <form onSubmit={onSubmit} className="space-y-4">
+    <form onSubmit={onSubmit} className="space-y-4 max-h-[70vh] overflow-y-auto pr-1">
+      {/* Customer */}
       <div className="space-y-2">
         <Label>Customer</Label>
         <Select
@@ -81,39 +216,47 @@ function MeasurementForm({
         </Select>
       </div>
 
+      {/* Garment Type */}
       <div className="space-y-2">
         <Label>Garment Type</Label>
-        <Select
-          value={form.garment_type}
-          onValueChange={(v) => setForm({ ...form, garment_type: v })}
-        >
+        <Select value={form.garment_type} onValueChange={handleGarmentChange}>
           <SelectTrigger>
             <SelectValue placeholder="Select garment" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="Shirt">Shirt</SelectItem>
-            <SelectItem value="Pant">Pant</SelectItem>
-            <SelectItem value="Suit">Suit</SelectItem>
-            <SelectItem value="Kurta">Kurta</SelectItem>
+            {Object.entries(GARMENT_TEMPLATES).map(([key, t]) => (
+              <SelectItem key={key} value={key}>
+                {t.emoji} {t.label}
+              </SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
-        {(["chest", "waist", "hips", "shoulder", "sleeve", "inseam", "neck"] as const).map(
-          (field) => (
-            <Input
-              key={field}
-              placeholder={field.charAt(0).toUpperCase() + field.slice(1)}
-              value={form[field]}
-              onChange={(e) => setForm({ ...form, [field]: e.target.value })}
-            />
-          )
-        )}
-      </div>
+      {/* Dynamic measurement fields */}
+      {template && (
+        <div className="space-y-3">
+          <p className="text-sm font-semibold text-muted-foreground border-b pb-1">
+            {template.emoji} {template.label} — Measurements
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            {template.fields.map((field) => (
+              <div key={field.key} className="space-y-1">
+                <Label className="text-xs text-muted-foreground">{field.label}</Label>
+                <Input
+                  placeholder='e.g. 36"'
+                  value={form[field.key] ?? ""}
+                  onChange={(e) => setForm({ ...form, [field.key]: e.target.value })}
+                />
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
 
+      {/* Upload */}
       <div className="space-y-2">
-        <Label>Upload Image</Label>
+        <Label>Upload Image (optional)</Label>
         <Input
           type="file"
           accept="image/*"
@@ -123,57 +266,47 @@ function MeasurementForm({
         />
       </div>
 
-      <Input
-        placeholder="Notes"
-        value={form.notes}
-        onChange={(e) => setForm({ ...form, notes: e.target.value })}
-      />
+      {/* Notes */}
+      <div className="space-y-1">
+        <Label className="text-xs text-muted-foreground">Notes</Label>
+        <Input
+          placeholder="Any special instructions..."
+          value={form.notes ?? ""}
+          onChange={(e) => setForm({ ...form, notes: e.target.value })}
+        />
+      </div>
 
-      <Button type="submit" className="w-full" disabled={isPending}>
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={isPending || !form.customer_id || !form.garment_type}
+      >
         {isPending ? "Saving..." : submitLabel}
       </Button>
     </form>
   )
 }
 
+// ── Main component ────────────────────────────────────────────────────────────
+
 export default function Measurements() {
   const queryClient = useQueryClient()
   const [search, setSearch] = useState("")
 
-  // Add
   const [addOpen, setAddOpen] = useState(false)
-  const [addForm, setAddForm] = useState(emptyForm)
+  const [addForm, setAddForm] = useState<FormValues>(emptyBase)
   const [addFile, setAddFile] = useState<File | null>(null)
 
-  // Edit
   const [editOpen, setEditOpen] = useState(false)
-  const [editingMeasurement, setEditingMeasurement] = useState<any>(null)
-  const [editForm, setEditForm] = useState(emptyForm)
+  const [editingId, setEditingId] = useState<number | null>(null)
+  const [editForm, setEditForm] = useState<FormValues>(emptyBase)
   const [editFile, setEditFile] = useState<File | null>(null)
 
-  // Delete
   const [deleteOpen, setDeleteOpen] = useState(false)
   const [deletingMeasurement, setDeletingMeasurement] = useState<any>(null)
 
-  const { data: customers = [] } = useQuery({
-    queryKey: ["customers"],
-    queryFn: getCustomers,
-  })
-
-  const { data: measurements = [] } = useQuery({
-    queryKey: ["measurements"],
-    queryFn: getMeasurements,
-  })
-
-  const buildFormData = (form: typeof emptyForm, file: File | null) => {
-    const fd = new FormData()
-    fd.append("customer_id", form.customer_id)
-    fd.append("garment_type", form.garment_type)
-    const fields = ["chest", "waist", "hips", "shoulder", "sleeve", "inseam", "neck", "notes"] as const
-    fields.forEach((f) => { if (form[f]) fd.append(f, form[f]) })
-    if (file) fd.append("file", file)
-    return fd
-  }
+  const { data: customers = [] } = useQuery({ queryKey: ["customers"], queryFn: getCustomers })
+  const { data: measurements = [] } = useQuery({ queryKey: ["measurements"], queryFn: getMeasurements })
 
   const addMutation = useMutation({
     mutationFn: addMeasurement,
@@ -181,22 +314,22 @@ export default function Measurements() {
       queryClient.invalidateQueries({ queryKey: ["measurements"] })
       setAddOpen(false)
       setAddFile(null)
-      setAddForm(emptyForm)
+      setAddForm(emptyBase)
     },
   })
 
   const updateMutation = useMutation({
-    mutationFn: ({ id, data }: { id: any; data: FormData }) => updateMeasurement(id, data),
+    mutationFn: ({ id, fd }: { id: number; fd: FormData }) => updateMeasurement(id, fd),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["measurements"] })
       setEditOpen(false)
-      setEditingMeasurement(null)
+      setEditingId(null)
       setEditFile(null)
     },
   })
 
   const deleteMutation = useMutation({
-    mutationFn: (id: any) => deleteMeasurement(id),
+    mutationFn: (id: number) => deleteMeasurement(id),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["measurements"] })
       setDeleteOpen(false)
@@ -205,25 +338,14 @@ export default function Measurements() {
   })
 
   const openEdit = (m: any) => {
-    setEditingMeasurement(m)
-    setEditForm({
-      customer_id: String(m.customer_id ?? ""),
-      garment_type: m.garment_type ?? "",
-      chest: m.chest ?? "",
-      waist: m.waist ?? "",
-      hips: m.hips ?? "",
-      shoulder: m.shoulder ?? "",
-      sleeve: m.sleeve ?? "",
-      inseam: m.inseam ?? "",
-      neck: m.neck ?? "",
-      notes: m.notes ?? "",
+    setEditingId(m.id)
+    const { id, image, ...rest } = m
+    const stringified: FormValues = {}
+    Object.entries(rest).forEach(([k, v]) => {
+      stringified[k] = v != null ? String(v) : ""
     })
+    setEditForm(stringified)
     setEditOpen(true)
-  }
-
-  const openDelete = (m: any) => {
-    setDeletingMeasurement(m)
-    setDeleteOpen(true)
   }
 
   const filtered = measurements.filter((m: any) => {
@@ -233,13 +355,13 @@ export default function Measurements() {
 
   return (
     <div className="space-y-6">
+      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">Measurements</h1>
           <p className="text-muted-foreground">Customer body measurements record</p>
         </div>
 
-        {/* Add */}
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger asChild>
             <Button>
@@ -256,7 +378,7 @@ export default function Measurements() {
               setForm={setAddForm}
               file={addFile}
               setFile={setAddFile}
-              onSubmit={(e: any) => {
+              onSubmit={(e) => {
                 e.preventDefault()
                 addMutation.mutate(buildFormData(addForm, addFile))
               }}
@@ -283,16 +405,18 @@ export default function Measurements() {
       <div className="grid gap-4 sm:grid-cols-2">
         {filtered.map((m: any) => {
           const customer = customers.find((c: any) => c.id === m.customer_id)
+          const template = m.garment_type ? GARMENT_TEMPLATES[m.garment_type] : null
+
           return (
             <Card key={m.id}>
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="flex items-center gap-2">
+                  <CardTitle className="flex items-center gap-2 text-base">
                     <Ruler className="h-4 w-4" />
                     {customer?.name}
-                    {m.garment_type && (
+                    {template && (
                       <span className="text-sm font-normal text-muted-foreground">
-                        — {m.garment_type}
+                        — {template.emoji} {template.label}
                       </span>
                     )}
                   </CardTitle>
@@ -311,7 +435,10 @@ export default function Measurements() {
                       </DropdownMenuItem>
                       <DropdownMenuItem
                         className="text-destructive focus:text-destructive"
-                        onClick={() => openDelete(m)}
+                        onClick={() => {
+                          setDeletingMeasurement({ ...m, customerName: customer?.name })
+                          setDeleteOpen(true)
+                        }}
                       >
                         <Trash2 className="mr-2 h-4 w-4" />
                         Delete
@@ -320,16 +447,22 @@ export default function Measurements() {
                   </DropdownMenu>
                 </div>
               </CardHeader>
+
               <CardContent>
-                <div className="grid grid-cols-4 gap-2 text-sm">
-                  {m.chest    && <p>Chest: {m.chest}"</p>}
-                  {m.waist    && <p>Waist: {m.waist}"</p>}
-                  {m.hips     && <p>Hips: {m.hips}"</p>}
-                  {m.shoulder && <p>Shoulder: {m.shoulder}"</p>}
-                  {m.sleeve   && <p>Sleeve: {m.sleeve}"</p>}
-                  {m.inseam   && <p>Inseam: {m.inseam}"</p>}
-                  {m.neck     && <p>Neck: {m.neck}"</p>}
-                </div>
+                {template ? (
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm">
+                    {template.fields.map((field) =>
+                      m[field.key] ? (
+                        <p key={field.key}>
+                          <span className="font-medium">{field.label}:</span>{" "}
+                          <span className="text-muted-foreground">{m[field.key]}"</span>
+                        </p>
+                      ) : null
+                    )}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">No measurements recorded.</p>
+                )}
                 {m.notes && (
                   <p className="mt-3 text-xs text-muted-foreground">📝 {m.notes}</p>
                 )}
@@ -356,12 +489,10 @@ export default function Measurements() {
             setForm={setEditForm}
             file={editFile}
             setFile={setEditFile}
-            onSubmit={(e: any) => {
+            onSubmit={(e) => {
               e.preventDefault()
-              updateMutation.mutate({
-                id: editingMeasurement?.id,
-                data: buildFormData(editForm, editFile),
-              })
+              if (editingId == null) return
+              updateMutation.mutate({ id: editingId, fd: buildFormData(editForm, editFile) })
             }}
             isPending={updateMutation.isPending}
             submitLabel="Save Changes"
@@ -377,10 +508,7 @@ export default function Measurements() {
             <AlertDialogTitle>Delete Measurement</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to delete the measurement record for{" "}
-              <strong>
-                {customers.find((c: any) => c.id === deletingMeasurement?.customer_id)?.name}
-              </strong>
-              ? This action cannot be undone.
+              <strong>{deletingMeasurement?.customerName}</strong>? This cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
