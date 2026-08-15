@@ -2,19 +2,28 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..database import get_db
 from .. import models, schemas
+from .auth import get_current_user
 
 router = APIRouter(prefix="/customers", tags=["Customers"])
 
 
 @router.get("/")
-def get_customers(db: Session = Depends(get_db)):
-    return db.query(models.Customer).all()
+def get_customers(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    return db.query(models.Customer).filter(models.Customer.owner_id == current_user.id).all()
 
 
 @router.post("/")
-def create_customer(data: schemas.CustomerCreate, db: Session = Depends(get_db)):
+def create_customer(
+    data: schemas.CustomerCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
 
     customer = models.Customer(
+        owner_id=current_user.id,
         name=data.name,
         phone=data.phone,
         email=data.email,
@@ -29,9 +38,17 @@ def create_customer(data: schemas.CustomerCreate, db: Session = Depends(get_db))
 
 
 @router.put("/{id}")
-def update_customer(id: int, data: schemas.CustomerCreate, db: Session = Depends(get_db)):
+def update_customer(
+    id: int,
+    data: schemas.CustomerCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
 
-    customer = db.query(models.Customer).filter(models.Customer.id == id).first()
+    customer = db.query(models.Customer).filter(
+        models.Customer.id == id,
+        models.Customer.owner_id == current_user.id,
+    ).first()
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
 
@@ -47,9 +64,16 @@ def update_customer(id: int, data: schemas.CustomerCreate, db: Session = Depends
 
 
 @router.delete("/{id}")
-def delete_customer(id: int, db: Session = Depends(get_db)):
+def delete_customer(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
 
-    customer = db.query(models.Customer).filter(models.Customer.id == id).first()
+    customer = db.query(models.Customer).filter(
+        models.Customer.id == id,
+        models.Customer.owner_id == current_user.id,
+    ).first()
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
 

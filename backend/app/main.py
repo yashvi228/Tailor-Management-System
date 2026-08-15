@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from sqlalchemy import inspect, text
 
 from .database import engine
 from . import models
@@ -22,6 +23,18 @@ app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
 
 # ✅ STEP 3: Create DB tables
 models.Base.metadata.create_all(bind=engine)
+
+
+def ensure_owner_columns():
+    inspector = inspect(engine)
+    with engine.begin() as conn:
+        for table in ("customers", "measurements", "orders", "invoices"):
+            columns = {column["name"] for column in inspector.get_columns(table)}
+            if "owner_id" not in columns:
+                conn.execute(text(f"ALTER TABLE {table} ADD COLUMN owner_id INTEGER"))
+
+
+ensure_owner_columns()
 
 # ✅ STEP 4: CORS
 app.add_middleware(

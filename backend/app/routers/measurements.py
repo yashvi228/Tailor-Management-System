@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, UploadFile, File, Form, HTTPException
 from sqlalchemy.orm import Session
 from .. import models, database
+from .auth import get_current_user
 import shutil, os
 
 router = APIRouter(prefix="/measurements", tags=["Measurements"])
@@ -8,8 +9,11 @@ UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
 @router.get("/")
-def get_measurements(db: Session = Depends(database.get_db)):
-    return db.query(models.Measurement).all()
+def get_measurements(
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    return db.query(models.Measurement).filter(models.Measurement.owner_id == current_user.id).all()
 
 @router.post("/")
 def create_measurement(
@@ -40,7 +44,15 @@ def create_measurement(
     notes:         str   = Form(None),
     file: UploadFile = File(None),
     db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(get_current_user),
 ):
+    customer = db.query(models.Customer).filter(
+        models.Customer.id == customer_id,
+        models.Customer.owner_id == current_user.id,
+    ).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
+
     image_path = None
     if file:
         file_location = f"{UPLOAD_DIR}/{file.filename}"
@@ -49,6 +61,7 @@ def create_measurement(
         image_path = file_location
 
     m = models.Measurement(
+        owner_id=current_user.id,
         customer_id=customer_id, garment_type=garment_type,
         chest=chest, waist=waist, hips=hips, shoulder=shoulder,
         sleeve=sleeve, inseam=inseam, neck=neck,
@@ -94,10 +107,21 @@ def update_measurement(
     notes:         str   = Form(None),
     file: UploadFile = File(None),
     db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(get_current_user),
 ):
-    m = db.query(models.Measurement).filter(models.Measurement.id == id).first()
+    m = db.query(models.Measurement).filter(
+        models.Measurement.id == id,
+        models.Measurement.owner_id == current_user.id,
+    ).first()
     if not m:
         raise HTTPException(status_code=404, detail="Measurement not found")
+
+    customer = db.query(models.Customer).filter(
+        models.Customer.id == customer_id,
+        models.Customer.owner_id == current_user.id,
+    ).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
 
     m.customer_id = customer_id
     m.garment_type = garment_type

@@ -1,3 +1,5 @@
+import { clearSession, getToken } from "@/lib/auth"
+
 const API = import.meta.env.VITE_API_URL ?? "http://127.0.0.1:8000/api"
 
 type RequestOptions = RequestInit & {
@@ -5,7 +7,7 @@ type RequestOptions = RequestInit & {
 }
 
 async function request<T = any>(path: string, options: RequestOptions = {}): Promise<T> {
-  const token = localStorage.getItem("token")
+  const token = getToken()
   const isFormData = options.body instanceof FormData
 
   const headers = new Headers(options.headers)
@@ -18,6 +20,11 @@ async function request<T = any>(path: string, options: RequestOptions = {}): Pro
   })
 
   if (!res.ok) {
+    if (res.status === 401) {
+      clearSession()
+      if (window.location.pathname !== "/auth") window.location.assign("/auth")
+    }
+
     const errorData = await res.json().catch(() => ({}))
     // FastAPI returns detail as array for 422 validation errors
     let message = `Request failed: ${res.status}`
@@ -45,6 +52,11 @@ export const loginUser = (data: any) =>
 // SIGNUP
 export const signupUser = (data: any) =>
   request("/auth/signup", { method: "POST", body: jsonBody(data) })
+
+export const getCurrentUser = () => request("/auth/me")
+
+export const changePassword = (data: { current_password: string; new_password: string }) =>
+  request("/auth/change-password", { method: "POST", body: jsonBody(data) })
 
 // CUSTOMERS
 export const getCustomers = () => request("/customers/")

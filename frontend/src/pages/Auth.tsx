@@ -1,14 +1,17 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useQueryClient } from "@tanstack/react-query";
 import { motion, AnimatePresence } from "framer-motion";
 import { Scissors, Eye, EyeOff, ArrowRight, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { loginUser, signupUser } from "@/lib/api";
+import { saveSession } from "@/lib/auth";
 
 export default function Auth() {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
   const [mode, setMode] = useState<"login" | "signup">("login");
   const [showPw, setShowPw] = useState(false);
@@ -31,13 +34,15 @@ export default function Auth() {
         // Then auto-login to get the token
         const loginData: any = await loginUser({ email: form.email, password: form.password });
         if (loginData?.access_token) {
-          localStorage.setItem("token", loginData.access_token);
+          saveSession(loginData.access_token, loginData.user);
+          queryClient.clear();
           navigate("/dashboard");
         }
       } else {
         const data: any = await loginUser({ email: form.email, password: form.password });
         if (data?.access_token) {
-          localStorage.setItem("token", data.access_token);
+          saveSession(data.access_token, data.user);
+          queryClient.clear();
           navigate("/dashboard");
         } else {
           setError("Login failed. Please check your credentials.");

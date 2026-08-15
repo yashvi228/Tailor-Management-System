@@ -19,6 +19,7 @@ class Customer(Base):
     __tablename__ = "customers"
 
     id = Column(Integer, primary_key=True)
+    owner_id = Column(Integer, ForeignKey("users.id"), index=True)
     name = Column(String)
     phone = Column(String)
     address = Column(String)
@@ -28,6 +29,7 @@ class Customer(Base):
 class Measurement(Base):
     __tablename__ = "measurements"
     id            = Column(Integer, primary_key=True)
+    owner_id      = Column(Integer, ForeignKey("users.id"), index=True)
     customer_id   = Column(Integer, ForeignKey("customers.id"))
     garment_type  = Column(String)
     chest         = Column(Float)
@@ -62,6 +64,8 @@ class Order(Base):
 
     id = Column(Integer, primary_key=True, index=True)
 
+    owner_id = Column(Integer, ForeignKey("users.id"), index=True)
+
     customer_id = Column(Integer, ForeignKey("customers.id"))
 
     order_code = Column(String, unique=True)
@@ -92,6 +96,7 @@ class Invoice(Base):
     __tablename__ = "invoices"
 
     id           = Column(Integer, primary_key=True, index=True)
+    owner_id     = Column(Integer, ForeignKey("users.id"), index=True)
     customer_id  = Column(Integer, ForeignKey("customers.id"), nullable=False)
     order_id     = Column(Integer, ForeignKey("orders.id"),    nullable=False)
     amount       = Column(Float,   nullable=False)

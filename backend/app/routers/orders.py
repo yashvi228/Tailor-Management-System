@@ -2,24 +2,30 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from ..database import get_db
 from .. import models, schemas
+from .auth import get_current_user
 from datetime import date
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
 
 @router.get("/")
-def get_orders(db: Session = Depends(get_db)):
-    return db.query(models.Order).all()
+def get_orders(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    return db.query(models.Order).filter(models.Order.owner_id == current_user.id).all()
 
 
 @router.post("/")
 def create_order(
     data: schemas.OrderCreate,
-    db: Session = Depends(get_db)
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
 ):
 
     customer = db.query(models.Customer).filter(
-        models.Customer.id == data.customer_id
+        models.Customer.id == data.customer_id,
+        models.Customer.owner_id == current_user.id,
     ).first()
     if not customer:
         raise HTTPException(status_code=404, detail="Customer not found")
@@ -27,12 +33,15 @@ def create_order(
     customer_name = customer.name.upper().replace(" ", "")
 
     order_count = db.query(models.Order).filter(
-        models.Order.customer_id == data.customer_id
+        models.Order.customer_id == data.customer_id,
+        models.Order.owner_id == current_user.id,
     ).count() + 1
 
-    order_code = f"{customer_name}-{order_count:03}"
+    order_code = f"U{current_user.id}-{customer_name}-{order_count:03}"
 
     order = models.Order(
+
+        owner_id = current_user.id,
 
         customer_id = data.customer_id,
 
@@ -57,11 +66,26 @@ def create_order(
 
 
 @router.put("/{id}")
-def update_order(id: int, data: schemas.OrderCreate, db: Session = Depends(get_db)):
+def update_order(
+    id: int,
+    data: schemas.OrderCreate,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
 
-    order = db.query(models.Order).filter(models.Order.id == id).first()
+    order = db.query(models.Order).filter(
+        models.Order.id == id,
+        models.Order.owner_id == current_user.id,
+    ).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+
+    customer = db.query(models.Customer).filter(
+        models.Customer.id == data.customer_id,
+        models.Customer.owner_id == current_user.id,
+    ).first()
+    if not customer:
+        raise HTTPException(status_code=404, detail="Customer not found")
 
     order.customer_id = data.customer_id
     order.description = data.description
@@ -76,9 +100,16 @@ def update_order(id: int, data: schemas.OrderCreate, db: Session = Depends(get_d
 
 
 @router.delete("/{id}")
-def delete_order(id: int, db: Session = Depends(get_db)):
+def delete_order(
+    id: int,
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
 
-    order = db.query(models.Order).filter(models.Order.id == id).first()
+    order = db.query(models.Order).filter(
+        models.Order.id == id,
+        models.Order.owner_id == current_user.id,
+    ).first()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
 
@@ -91,12 +122,16 @@ def delete_order(id: int, db: Session = Depends(get_db)):
 from datetime import date
 
 @router.get("/reminders")
-def get_reminders(db: Session = Depends(get_db)):
+def get_reminders(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(get_current_user),
+):
 
     today = date.today()
 
     orders = db.query(models.Order).filter(
-        models.Order.due_date == today
+        models.Order.due_date == today,
+        models.Order.owner_id == current_user.id,
     ).all()
 
     return orders

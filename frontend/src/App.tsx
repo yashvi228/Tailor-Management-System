@@ -13,20 +13,19 @@ import Inventory    from "./pages/Inventory"
 import Reports      from "./pages/Reports"
 import Settings     from "./pages/Settings"
 import AppLayout    from "./components/AppLayout"
+import { hasValidSession } from "./lib/auth"
 
 /* ── Auth guards ────────────────────────────────────────────────────── */
 
 /** Only allow access when a token exists; otherwise redirect to /auth */
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const token = localStorage.getItem("token")
-  if (!token) return <Navigate to="/auth" replace />
+  if (!hasValidSession()) return <Navigate to="/auth" replace />
   return <>{children}</>
 }
 
 /** Only allow access when NOT logged in; otherwise redirect to /dashboard */
 function GuestRoute({ children }: { children: React.ReactNode }) {
-  const token = localStorage.getItem("token")
-  if (token) return <Navigate to="/dashboard" replace />
+  if (hasValidSession()) return <Navigate to="/dashboard" replace />
   return <>{children}</>
 }
 

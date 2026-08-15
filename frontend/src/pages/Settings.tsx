@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import {
   User, Store, Bell, Palette, Shield,
@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
+import { changePassword } from "@/lib/api";
+import { getStoredUser, getUserStorageKey } from "@/lib/auth";
 
 const container = { hidden: { opacity: 0 }, show: { opacity: 1, transition: { staggerChildren: 0.06 } } };
 const item = { hidden: { opacity: 0, y: 12 }, show: { opacity: 1, y: 0, transition: { duration: 0.35 } } };
@@ -19,6 +21,40 @@ const TABS = [
   { id: "appearance",   label: "Appearance",    icon: Palette },
   { id: "security",     label: "Security",      icon: Shield  },
 ];
+
+const SETTINGS_KEY = "tailorpro:settings";
+
+const DEFAULT_PROFILE = { name: "Tailor Studio", email: "admin@tailorpro.com", phone: "+91 98765 43210" };
+const DEFAULT_SHOP = { shopName: "TailorPro Studio", address: "123 Fashion Street, Mumbai", gst: "", currency: "INR" };
+const DEFAULT_NOTIFS = { orderAlerts: true, dueDateReminders: true, paymentAlerts: true, weeklyReport: false };
+const DEFAULT_LOOK = { theme: "light", accent: "sky" };
+
+const ACCENT_VARS: Record<string, { primary: string; ring: string }> = {
+  sky: { primary: "199 89% 48%", ring: "199 89% 48%" },
+  teal: { primary: "173 80% 40%", ring: "173 80% 40%" },
+  violet: { primary: "262 83% 58%", ring: "262 83% 58%" },
+  rose: { primary: "346 77% 50%", ring: "346 77% 50%" },
+  amber: { primary: "38 92% 50%", ring: "38 92% 50%" },
+};
+
+function loadSettings(storageKey: string) {
+  try {
+    const stored = JSON.parse(localStorage.getItem(storageKey) || "{}");
+    return {
+      profile: { ...DEFAULT_PROFILE, ...stored.profile },
+      shop: { ...DEFAULT_SHOP, ...stored.shop },
+      notifs: { ...DEFAULT_NOTIFS, ...stored.notifs },
+      look: { ...DEFAULT_LOOK, ...stored.look },
+    };
+  } catch {
+    return {
+      profile: DEFAULT_PROFILE,
+      shop: DEFAULT_SHOP,
+      notifs: DEFAULT_NOTIFS,
+      look: DEFAULT_LOOK,
+    };
+  }
+}
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
   return (
@@ -53,16 +89,63 @@ function SettingRow({
 }
 
 export default function Settings() {
+  const currentUser = getStoredUser();
+  const storageKey = getUserStorageKey(SETTINGS_KEY);
+  const settings = loadSettings(storageKey);
   const [tab, setTab]       = useState("profile");
   const [saved, setSaved]   = useState(false);
-  const [profile, setProfile] = useState({ name: "Tailor Studio", email: "admin@tailorpro.com", phone: "+91 98765 43210" });
-  const [shop, setShop]     = useState({ shopName: "TailorPro Studio", address: "123 Fashion Street, Mumbai", gst: "", currency: "INR" });
-  const [notifs, setNotifs] = useState({ orderAlerts: true, dueDateReminders: true, paymentAlerts: true, weeklyReport: false });
-  const [look, setLook]     = useState({ theme: "light", accent: "sky" });
+  const [profile, setProfile] = useState({ ...settings.profile, email: currentUser?.email ?? settings.profile.email });
+  const [shop, setShop]     = useState(settings.shop);
+  const [notifs, setNotifs] = useState(settings.notifs);
+  const [look, setLook]     = useState(settings.look);
+  const [security, setSecurity] = useState({ current: "", next: "", confirm: "" });
+  const [securityMessage, setSecurityMessage] = useState("");
+  const [securityError, setSecurityError] = useState("");
+  const [savingPassword, setSavingPassword] = useState(false);
+
+  useEffect(() => {
+    const root = document.documentElement;
+    const accent = ACCENT_VARS[look.accent] ?? ACCENT_VARS.sky;
+    root.style.setProperty("--primary", accent.primary);
+    root.style.setProperty("--ring", accent.ring);
+
+    const prefersDark = window.matchMedia?.("(prefers-color-scheme: dark)").matches;
+    const shouldDark = look.theme === "dark" || (look.theme === "system" && prefersDark);
+    root.classList.toggle("dark", shouldDark);
+    localStorage.setItem("darkMode", String(shouldDark));
+  }, [look]);
 
   const handleSave = () => {
+    localStorage.setItem(storageKey, JSON.stringify({ profile, shop, notifs, look }));
     setSaved(true);
     setTimeout(() => setSaved(false), 2200);
+  };
+
+  const handlePasswordUpdate = async () => {
+    setSecurityError("");
+    setSecurityMessage("");
+    if (security.next !== security.confirm) {
+      setSecurityError("New passwords do not match.");
+      return;
+    }
+    if (security.next.length < 6) {
+      setSecurityError("New password must be at least 6 characters.");
+      return;
+    }
+
+    setSavingPassword(true);
+    try {
+      await changePassword({
+        current_password: security.current,
+        new_password: security.next,
+      });
+      setSecurity({ current: "", next: "", confirm: "" });
+      setSecurityMessage("Password updated successfully.");
+    } catch (err: any) {
+      setSecurityError(err.message || "Unable to update password.");
+    } finally {
+      setSavingPassword(false);
+    }
   };
 
   return (
@@ -232,17 +315,31 @@ export default function Settings() {
             {tab === "security" && (
               <div className="space-y-4">
                 {[
-                  { label: "Current Password",     type: "password" },
-                  { label: "New Password",          type: "password" },
-                  { label: "Confirm New Password",  type: "password" },
-                ].map(({ label, type }) => (
-                  <div key={label} className="space-y-1.5">
+                  { label: "Current Password", key: "current" },
+                  { label: "New Password", key: "next" },
+                  { label: "Confirm New Password", key: "confirm" },
+                ].map(({ label, key }) => (
+                  <div key={key} className="space-y-1.5">
                     <Label className="text-sm font-medium text-gray-700">{label}</Label>
-                    <Input type={type} className="h-9 rounded-xl border-gray-200" placeholder="••••••••" />
+                    <Input
+                      type="password"
+                      className="h-9 rounded-xl border-gray-200"
+                      placeholder="••••••••"
+                      value={(security as any)[key]}
+                      onChange={(e) => setSecurity({ ...security, [key]: e.target.value })}
+                    />
                   </div>
                 ))}
-                <Button variant="outline" size="sm" className="text-sm rounded-xl border-gray-200 mt-1">
-                  Update Password
+                {securityError && <p className="text-sm text-red-600 bg-red-50 border border-red-100 rounded-xl px-3 py-2">{securityError}</p>}
+                {securityMessage && <p className="text-sm text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-xl px-3 py-2">{securityMessage}</p>}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-sm rounded-xl border-gray-200 mt-1"
+                  onClick={handlePasswordUpdate}
+                  disabled={savingPassword || !security.current || !security.next || !security.confirm}
+                >
+                  {savingPassword ? "Updating..." : "Update Password"}
                 </Button>
               </div>
             )}

@@ -1,12 +1,14 @@
 import { useState, useEffect } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
+import { useQueryClient } from "@tanstack/react-query";
 import {
   LayoutDashboard, Users, Ruler, ShoppingBag, FileText,
   Package, BarChart3, Settings, LogOut, Scissors, Menu, X,
   Bell, Search, Moon, Sun, ChevronLeft, ChevronRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { clearSession, getStoredUser } from "@/lib/auth";
 
 /* ── Navigation config ──────────────────────────────────────────────── */
 const NAV_GROUPS = [
@@ -106,6 +108,7 @@ export default function AppLayout({
   children: React.ReactNode;
 }) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
   const [dark, setDark] = useState(() => {
@@ -114,6 +117,7 @@ export default function AppLayout({
     if (saved !== null) return saved === "true";
     return document.documentElement.classList.contains("dark");
   });
+  const user = getStoredUser();
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
@@ -121,7 +125,8 @@ export default function AppLayout({
   }, [dark]);
 
   const handleLogout = () => {
-    localStorage.removeItem("token");
+    queryClient.clear();
+    clearSession();
     navigate("/auth");
   };
 
@@ -285,7 +290,7 @@ export default function AppLayout({
 
             {/* Avatar */}
             <button className="h-8 w-8 rounded-lg gradient-brand flex items-center justify-center shadow-brand-sm hover:opacity-90 transition-opacity">
-              <span className="text-white text-xs font-bold">T</span>
+              <span className="text-white text-xs font-bold">{user?.email?.[0]?.toUpperCase() ?? "T"}</span>
             </button>
           </div>
         </header>
