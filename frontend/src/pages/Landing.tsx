@@ -4,7 +4,7 @@ import { motion, useInView } from "framer-motion";
 import {
   Scissors, ArrowRight, Check, Users, ShoppingBag,
   Ruler, FileText, Package, BarChart3, Sun, Moon, Menu, X,
-  TrendingUp, Star, ChevronRight, Shield, Zap, Clock,
+  TrendingUp, ChevronRight, Shield, Zap, Clock,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -108,7 +108,7 @@ const PRICING = [
   },
   {
     name: "Studio",
-    price: "₹2,499",
+    price: "₹1,499",
     period: "/mo",
     desc: "Multi-branch studios & large teams.",
     features: ["Everything in Pro", "Unlimited users", "Multi-branch support", "Custom branding", "API access", "Dedicated support"],
@@ -117,11 +117,41 @@ const PRICING = [
   },
 ];
 
-const TESTIMONIALS = [
-  { name: "Meera Patel", role: "Boutique owner, Ahmedabad", text: "TailorPro completely replaced my notebook. I can now check any measurement or order from my phone in seconds.", stars: 5 },
-  { name: "Rajan Khanna", role: "Master tailor, Mumbai", text: "The billing feature alone saved me hours every week. My clients love the professional invoices.", stars: 5 },
-  { name: "Sunita Devi", role: "Bridal studio, Delhi", text: "Managing 200+ bridal orders used to be chaos. Now everything is organised and I never miss a due date.", stars: 5 },
-];
+/* ── Animated counter (used in the social-proof stats row) ──────────────── */
+function AnimatedStat({ value, label }: { value: string; label: string }) {
+  const ref = useRef<HTMLParagraphElement>(null);
+  const inView = useInView(ref, { once: true, margin: "-40px" });
+  const [display, setDisplay] = useState("0");
+
+  // Pull the leading numeric portion out so we can count up to it,
+  // keeping any suffix (K+, %, ★, etc.) intact.
+  const match = value.match(/^([\d.]+)(.*)$/);
+  const target = match ? parseFloat(match[1]) : 0;
+  const suffix = match ? match[2] : "";
+  const decimals = match && match[1].includes(".") ? match[1].split(".")[1].length : 0;
+
+  useEffect(() => {
+    if (!inView) return;
+    const duration = 1200;
+    const start = performance.now();
+    let frame: number;
+    const tick = (now: number) => {
+      const progress = Math.min((now - start) / duration, 1);
+      const eased = 1 - Math.pow(1 - progress, 3);
+      const current = target * eased;
+      setDisplay(decimals ? current.toFixed(decimals) : Math.round(current).toString());
+      if (progress < 1) frame = requestAnimationFrame(tick);
+    };
+    frame = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(frame);
+  }, [inView, target, decimals]);
+
+  return (
+    <p ref={ref} className="text-2xl font-extrabold gradient-brand-text tabular-nums">
+      {display}{suffix}
+    </p>
+  );
+}
 
 /* ── Main component ───────────────────────────────────────────────────── */
 export default function Landing() {
@@ -146,7 +176,6 @@ export default function Landing() {
   const navLinks = [
     { href: "#features", label: "Features" },
     { href: "#pricing", label: "Pricing" },
-    { href: "#customers", label: "Customers" },
   ];
 
   return (
@@ -376,12 +405,15 @@ export default function Landing() {
             Trusted by tailors across India
           </p>
           <div className="flex flex-wrap justify-center gap-8">
-            {["500+ Studios", "50K+ Orders", "4.9 ★ Rating", "99.9% Uptime"].map((s) => (
-              <div key={s} className="text-center">
-                <p className="text-2xl font-extrabold gradient-brand-text">{s.split(" ")[0]}</p>
-                <p className="text-xs text-gray-400 mt-0.5">{s.split(" ").slice(1).join(" ")}</p>
-              </div>
-            ))}
+            {["500+ Studios", "50K+ Orders", "4.9★ Rating", "99.9% Uptime"].map((s) => {
+              const [value, ...rest] = s.split(" ");
+              return (
+                <div key={s} className="text-center">
+                  <AnimatedStat value={value} label={rest.join(" ")} />
+                  <p className="text-xs text-gray-400 mt-0.5">{rest.join(" ")}</p>
+                </div>
+              );
+            })}
           </div>
         </div>
       </section>
@@ -404,13 +436,21 @@ export default function Landing() {
           <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {FEATURES.map(({ icon: Icon, title, desc, color }, i) => (
               <FadeInWhenVisible key={title} delay={i * 0.06}>
-                <div className="group bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-sky-100 hover:-translate-y-0.5 transition-all duration-200 cursor-default h-full">
-                  <div className={`h-10 w-10 rounded-xl ${color} flex items-center justify-center mb-4`}>
+                <motion.div
+                  whileHover={{ y: -6, scale: 1.015 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 22 }}
+                  className="group bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-lg hover:border-sky-100 transition-shadow duration-300 cursor-default h-full"
+                >
+                  <motion.div
+                    whileHover={{ rotate: -8, scale: 1.12 }}
+                    transition={{ type: "spring", stiffness: 400, damping: 12 }}
+                    className={`h-10 w-10 rounded-xl ${color} flex items-center justify-center mb-4`}
+                  >
                     <Icon className="h-5 w-5" />
-                  </div>
+                  </motion.div>
                   <h3 className="font-semibold text-gray-900 mb-2">{title}</h3>
                   <p className="text-sm text-gray-500 leading-relaxed">{desc}</p>
-                </div>
+                </motion.div>
               </FadeInWhenVisible>
             ))}
           </div>
@@ -431,14 +471,24 @@ export default function Landing() {
               { step: "03", title: "Manage everything", desc: "Track orders, send invoices, monitor inventory — all from one elegant dashboard." },
             ].map((s, i) => (
               <FadeInWhenVisible key={s.step} delay={i * 0.1}>
-                <div className="relative bg-white border border-gray-100 rounded-2xl p-6 shadow-sm">
+                <motion.div
+                  whileHover={{ y: -4 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 22 }}
+                  className="relative bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md hover:border-sky-100 transition-shadow duration-300"
+                >
                   <span className="text-5xl font-extrabold text-gray-100 leading-none block mb-3">{s.step}</span>
                   <h3 className="font-semibold text-gray-900 mb-2">{s.title}</h3>
                   <p className="text-sm text-gray-500 leading-relaxed">{s.desc}</p>
                   {i < 2 && (
-                    <ChevronRight className="absolute -right-3 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-200 hidden sm:block" />
+                    <motion.div
+                      className="absolute -right-3 top-1/2 -translate-y-1/2 hidden sm:block"
+                      animate={{ x: [0, 4, 0] }}
+                      transition={{ duration: 1.4, repeat: Infinity, ease: "easeInOut", delay: i * 0.3 }}
+                    >
+                      <ChevronRight className="h-5 w-5 text-sky-200" />
+                    </motion.div>
                   )}
-                </div>
+                </motion.div>
               </FadeInWhenVisible>
             ))}
           </div>
@@ -461,15 +511,23 @@ export default function Landing() {
           <div className="grid sm:grid-cols-3 gap-5 items-start">
             {PRICING.map((plan, i) => (
               <FadeInWhenVisible key={plan.name} delay={i * 0.08}>
-                <div className={`relative rounded-2xl border p-7 ${
-                  plan.highlight
-                    ? "gradient-brand text-white shadow-brand border-transparent"
-                    : "bg-white border-gray-200 shadow-sm"
-                }`}>
+                <motion.div
+                  whileHover={{ y: -6, scale: plan.highlight ? 1.03 : 1.015 }}
+                  transition={{ type: "spring", stiffness: 300, damping: 22 }}
+                  className={`relative rounded-2xl border p-7 ${
+                    plan.highlight
+                      ? "gradient-brand text-white shadow-brand border-transparent"
+                      : "bg-white border-gray-200 shadow-sm"
+                  }`}
+                >
                   {plan.highlight && (
-                    <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-900 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide">
+                    <motion.span
+                      animate={{ scale: [1, 1.06, 1] }}
+                      transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                      className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-400 text-amber-900 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wide shadow-sm"
+                    >
                       Most popular
-                    </span>
+                    </motion.span>
                   )}
                   <p className={`font-semibold text-sm mb-2 ${plan.highlight ? "text-sky-100" : "text-gray-500"}`}>
                     {plan.name}
@@ -502,39 +560,7 @@ export default function Landing() {
                       {plan.cta}
                     </Button>
                   </Link>
-                </div>
-              </FadeInWhenVisible>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── TESTIMONIALS ────────────────────────────────────────── */}
-      <section id="customers" className="py-24 px-4 sm:px-6 lg:px-8 bg-gray-50">
-        <div className="max-w-5xl mx-auto">
-          <FadeInWhenVisible className="text-center mb-14">
-            <span className="inline-block text-xs font-semibold text-sky-600 uppercase tracking-widest bg-sky-50 px-3 py-1 rounded-full mb-4">
-              Customers
-            </span>
-            <h2 className="text-4xl font-extrabold text-gray-900 mb-4 tracking-tight">
-              Loved by tailors across India
-            </h2>
-          </FadeInWhenVisible>
-          <div className="grid sm:grid-cols-3 gap-5">
-            {TESTIMONIALS.map((t, i) => (
-              <FadeInWhenVisible key={t.name} delay={i * 0.1}>
-                <div className="bg-white border border-gray-100 rounded-2xl p-6 shadow-sm hover:shadow-md transition-shadow">
-                  <div className="flex mb-3">
-                    {Array.from({ length: t.stars }).map((_, j) => (
-                      <Star key={j} className="h-4 w-4 text-amber-400 fill-amber-400" />
-                    ))}
-                  </div>
-                  <p className="text-gray-700 text-sm leading-relaxed mb-4">"{t.text}"</p>
-                  <div>
-                    <p className="font-semibold text-sm text-gray-900">{t.name}</p>
-                    <p className="text-xs text-gray-400">{t.role}</p>
-                  </div>
-                </div>
+                </motion.div>
               </FadeInWhenVisible>
             ))}
           </div>
@@ -584,7 +610,7 @@ export default function Landing() {
             </Link>
 
             <div className="flex items-center gap-6 text-sm text-gray-500">
-              {["Features", "Pricing", "Customers"].map((l) => (
+              {["Features", "Pricing"].map((l) => (
                 <a key={l} href={`#${l.toLowerCase()}`} className="hover:text-gray-900 transition-colors">
                   {l}
                 </a>
